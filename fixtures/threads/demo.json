@@ -1,0 +1,174 @@
+{
+  "note": "Synthetic data. Every person, company and product named here is fictional. The 'scripted' blocks are the model replies used by the offline demo; with --live a real model answers instead.",
+  "product": "Trellis",
+  "threads": [
+    {
+      "id": "complete-bug",
+      "author": "Dana Whitfield",
+      "minutesAgo": 90,
+      "html": "<p>Gantt export downloads an empty PDF</p><p>On /projects/gantt I clicked Export and then chose PDF. The file downloads but every page is blank; I expected the chart exactly as it shows on screen. It happens every time, and only in the Birchwood Clinic workspace. They need the chart for a board meeting tomorrow.</p><img src=\"https://graph.microsoft.com/v1.0/placeholder/hostedContents/1/$value\">",
+      "scripted": {
+        "match": "Gantt export downloads an empty PDF",
+        "triage": [
+          {
+            "kind": "BUG",
+            "status": "READY",
+            "title": "Gantt export downloads an empty PDF",
+            "summary": "Exporting the Gantt chart to PDF produces a file with blank pages in one workspace.",
+            "area": "web",
+            "severity": "P2",
+            "kit": {}
+          },
+          {
+            "kind": "BUG",
+            "status": "TRIAGED",
+            "title": "Gantt export downloads an empty PDF",
+            "summary": "Exporting the Gantt chart to PDF produces a file with blank pages in the Birchwood Clinic workspace.",
+            "area": "web",
+            "severity": "P2",
+            "kit": {
+              "location": "/projects/gantt",
+              "role": "workspace admin",
+              "steps": ["open /projects/gantt", "click Export and choose PDF"],
+              "expected": "a PDF showing the chart exactly as it appears on screen",
+              "actual": "the PDF downloads but every page is blank",
+              "occurredAt": "unknown",
+              "scope": { "breadth": "one_customer", "customerRef": "Birchwood Clinic" },
+              "evidence": [],
+              "frequency": "always",
+              "impact": "they cannot present the chart at tomorrow's board meeting"
+            },
+            "questions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "incomplete-bug",
+      "author": "Marcus Oyelaran",
+      "minutesAgo": 80,
+      "html": "<p>The calendar sync is broken again, can someone take a look?</p>",
+      "followUp": {
+        "author": "Marcus Oyelaran",
+        "html": "<p>Sure. On /settings/integrations I connect the calendar and click Sync now. I expected my milestones to appear in the calendar within a minute, but nothing shows up and the page says &quot;Last sync: never&quot;. It is the same for every workspace I checked.</p>"
+      },
+      "scripted": {
+        "match": "The calendar sync is broken again",
+        "triage": [
+          {
+            "kind": "BUG",
+            "status": "TRIAGED",
+            "title": "Calendar sync is not working",
+            "summary": "The reporter says calendar sync is broken again, with no further detail yet.",
+            "area": "integrations",
+            "severity": "P3",
+            "location": "unknown",
+            "steps": [],
+            "expected": "unknown",
+            "actual": "calendar sync is broken",
+            "scope": "unknown",
+            "evidence": [],
+            "questions": [
+              { "field": "location", "text": "You said the calendar sync is broken again: which page were you on when you noticed?" },
+              { "field": "steps", "text": "What did you click right before the sync failed?" }
+            ]
+          },
+          {
+            "kind": "BUG",
+            "status": "TRIAGED",
+            "title": "Calendar sync never runs after connecting",
+            "summary": "After connecting the calendar and clicking Sync now, milestones never appear and the page shows 'Last sync: never'.",
+            "area": "integrations",
+            "severity": "P2",
+            "kit": {
+              "location": "/settings/integrations",
+              "steps": ["connect the calendar on /settings/integrations", "click Sync now"],
+              "expected": "milestones appear in the calendar within a minute",
+              "actual": "nothing shows up and the page says 'Last sync: never'",
+              "scope": "every workspace I checked",
+              "evidence": [],
+              "noEvidenceReason": "the page text was quoted directly in the report",
+              "frequency": "unknown"
+            },
+            "questions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "announcement",
+      "author": "Priya Raman",
+      "minutesAgo": 70,
+      "html": "<p>[SHIPPED] Bulk archive</p><p>You can now select several projects on the dashboard and archive them in one go. It is live for everyone.</p>",
+      "scripted": {
+        "match": "[SHIPPED] Bulk archive",
+        "triage": [
+          {
+            "kind": "FEATURE",
+            "status": "REJECTED",
+            "rejectionKind": "ANNOUNCEMENT",
+            "triageNote": "This message announces a feature that is already live; nothing is being requested.",
+            "title": "Bulk archive release announcement",
+            "summary": "Announcement that bulk archive is live for everyone.",
+            "area": "web",
+            "severity": "P4",
+            "kit": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "tagged-regression",
+      "author": "Priya Raman",
+      "minutesAgo": 60,
+      "html": "<p>[FIXED] Duplicate reminders</p><p>It is happening again. On /settings/notifications I turned on daily reminders and every teammate now gets each reminder email twice, I expected a single email per task. All workspaces are affected since this morning.</p><p>Message-ID of one of the duplicates: 20250115-rem-88412</p>",
+      "scripted": {
+        "match": "[FIXED] Duplicate reminders",
+        "triage": [
+          {
+            "kind": "BUG",
+            "status": "TRIAGED",
+            "title": "Duplicate reminder emails are back",
+            "summary": "Regression: with daily reminders on, every teammate receives each reminder email twice, in all workspaces.",
+            "area": "notifications",
+            "severity": "P2",
+            "kit": {
+              "location": "/settings/notifications",
+              "steps": ["turn on daily reminders on /settings/notifications", "wait for the daily reminder email"],
+              "expected": "a single reminder email per task",
+              "actual": "every teammate gets each reminder email twice",
+              "scope": { "breadth": "all" },
+              "evidence": ["20250115-rem-88412"],
+              "frequency": "always"
+            },
+            "questions": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "question",
+      "author": "Tom Achterberg",
+      "minutesAgo": 50,
+      "html": "<p>Quick one: on /projects/board, how do I move a card to another project without losing its comments?</p>",
+      "scripted": {
+        "match": "how do I move a card to another project",
+        "triage": [
+          {
+            "kind": "QUESTION",
+            "status": "TRIAGED",
+            "title": "How to move a card to another project keeping comments",
+            "summary": "The reporter asks how to move a board card to another project without losing its comments.",
+            "area": "web",
+            "severity": "P4",
+            "kit": {
+              "question": "How do I move a card to another project without losing its comments?",
+              "location": "/projects/board"
+            },
+            "questions": []
+          }
+        ]
+      }
+    }
+  ]
+}
