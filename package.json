@@ -1,0 +1,61 @@
+{
+  "name": "support-triage-gate",
+  "version": "0.1.0",
+  "description": "An LLM triage gate for B2B support: turns chat threads into reproducible GitHub issues. The model drafts, deterministic code decides.",
+  "license": "MIT",
+  "author": "Raul Gomes",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FirstRaulGG/support-triage-gate.git"
+  },
+  "homepage": "https://github.com/FirstRaulGG/support-triage-gate#readme",
+  "bugs": {
+    "url": "https://github.com/FirstRaulGG/support-triage-gate/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "triage-gate": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "fixtures",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx src/cli.ts",
+    "demo": "tsx src/cli.ts demo",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "check": "npm run lint && npm run typecheck && npm run test"
+  },
+  "keywords": [
+    "support",
+    "triage",
+    "llm",
+    "claude",
+    "microsoft-teams",
+    "github-issues",
+    "guardrails"
+  ],
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.10.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.6",
+    "eslint": "^10.15.0",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.73.0",
+    "vitest": "^5.1.1"
+  }
+}
