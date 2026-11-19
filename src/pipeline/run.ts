@@ -176,12 +176,11 @@ export class Gate {
       const giveUp = failures >= (this.options.maxTriageFailures ?? 3);
       report.errors.push({ ticket: ticket.number, step: "triage", outcome: "TRIAGE_FAILED", detail: result.error });
       // A ticket the model cannot triage must not retry forever in silence. After a few attempts
-      // it is put in front of a person, with the reason.
+      // it is put in front of a person, with the reason. This holds for a re-triage too: a ticket
+      // that was already triaged keeps its kit, but stops being re-read every cycle.
       return store.updateTicket(ticket.id, {
         triageFailures: failures,
-        ...(giveUp && ticket.status === "NEW"
-          ? { status: "NEEDS_HUMAN", triageNote: `automatic triage failed: ${result.error}` }
-          : {}),
+        ...(giveUp ? { status: "NEEDS_HUMAN", triageNote: `automatic triage failed: ${result.error}` } : {}),
       });
     }
 

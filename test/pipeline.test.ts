@@ -232,6 +232,30 @@ describe("a model that never produces valid output", () => {
     expect(llm.calls).toHaveLength(calls);
   });
 
+  it("stops re-reading a ticket whose re-triage keeps failing", async () => {
+    const incomplete = bugOutput({ kit: completeBugKit({ location: "", steps: [] }) });
+    const { source, store, gate, llm } = setup(
+      [{ match: "export button", triage: [incomplete, "not json at all"] }],
+      { maxTriageFailures: 2 },
+    );
+    const root = source.add({ author: "Dana", text: REPORT });
+    await gate.runCycle();
+    expect((await store.getTicket(1))!.status).toBe("NEEDS_INFO");
+
+    source.add({ threadId: root.id, author: "Dana", text: "the export button is on the reports page" });
+    await gate.runCycle();
+    expect((await store.getTicket(1))!).toMatchObject({ status: "NEEDS_INFO", triageFailures: 1 });
+
+    await gate.runCycle();
+    const held = (await store.getTicket(1))!;
+    expect(held).toMatchObject({ status: "NEEDS_HUMAN", kind: "BUG", triageFailures: 2 });
+    expect(held.triageNote).toContain("automatic triage failed");
+
+    const calls = llm.calls.length;
+    await gate.runCycle();
+    expect(llm.calls).toHaveLength(calls);
+  });
+
   it("does not stop the other tickets in the batch", async () => {
     const { source, store, gate } = setup([{ match: "first thread", triage: ["garbage"] }, completeScript]);
     source.add({ author: "Dana", text: "first thread: something" });
