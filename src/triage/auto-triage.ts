@@ -1,13 +1,13 @@
 // Unattended triage: one thread in, one judged ticket out.
 //
-// The guarantee is not in the prompt. The model only EXTRACTS the kit; `evaluateKit` judges it,
-// and it is pure code. The output schema has no `READY`, so not even a hallucinating model can
-// promote a ticket. Swapping the human operator for a scheduler loosens none of that.
+// The model only EXTRACTS the kit. `evaluateKit` judges whether it is complete and `anchorKit`
+// removes evidence and names the reporter never wrote; both are pure code. The output schema has
+// no `READY`, so the model cannot promote a ticket by saying so.
 
-import { reconcileEvidence } from "../core/evidence.js";
-import { isGrounded } from "../core/grounding.js";
+import { anchorKit } from "../core/anchor.js";
+import { isGrounded, isNameGrounded } from "../core/grounding.js";
 import { KIT_SCHEMAS, UNKNOWN, evaluateKit } from "../core/kits.js";
-import type { AnyKit, EvidenceItem, KitEvaluation, TicketKind } from "../core/kits.js";
+import type { AnyKit, KitEvaluation, TicketKind } from "../core/kits.js";
 import { mergeKit } from "../core/merge.js";
 import { gateStatus, parseTriageOutput } from "../core/output.js";
 import type { GateStatus, TriageOutput } from "../core/output.js";
@@ -169,7 +169,8 @@ async function secondRead(
   for (const [field, value] of Object.entries(candidate as Record<string, unknown>)) {
     if (!missing.includes(field)) continue;
     const anchor = groundableText(kind, field, value);
-    if (anchor !== null && !isGrounded(anchor, grounding)) continue;
+    const check = field === "scope" || field === "target" ? isNameGrounded : isGrounded;
+    if (anchor !== null && !check(anchor, grounding)) continue;
     accepted[field] = value;
   }
   return { recovered: Object.keys(accepted).length > 0 ? accepted : null, usage };
@@ -226,11 +227,8 @@ export async function autoTriage(
     newKit: attempt.value.kit as AnyKit,
   });
 
-  // Whether evidence EXISTS is a fact about the thread, not a report from the model.
-  if ("evidence" in kit) {
-    const evidence = reconcileEvidence(kit.evidence as EvidenceItem[], reporterText(input));
-    kit = { ...kit, evidence } as AnyKit;
-  }
+  // Evidence and names are facts about the thread, not a report from the model.
+  kit = anchorKit(kind, kit, reporterText(input));
 
   let evaluation = evaluateKit(kind, kit);
 
@@ -243,7 +241,8 @@ export async function autoTriage(
       // second read instead of contaminating a kit that was already valid.
       const validated = KIT_SCHEMAS[kind].safeParse({ ...kit, ...second.recovered });
       if (validated.success) {
-        kit = validated.data as AnyKit;
+        // Anchored again: the second read may have proposed evidence or a name of its own.
+        kit = anchorKit(kind, validated.data as AnyKit, reporterText(input));
         evaluation = evaluateKit(kind, kit);
       }
     }

@@ -24,6 +24,12 @@ describe("stripTeamsHtml", () => {
     );
   });
 
+  it("does not let a person type the attachment marker", () => {
+    expect(stripTeamsHtml(`<p>broken ${ATTACHMENT_MARKER} &#91;image attached&#93;</p>`)).toBe(
+      "broken (image attached) (image attached)",
+    );
+  });
+
   it("keeps the name of a mention and drops the tag", () => {
     expect(stripTeamsHtml('<p><at id="0">Support Bot</at> the export fails</p>')).toBe("Support Bot the export fails");
   });

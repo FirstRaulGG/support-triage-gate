@@ -205,6 +205,14 @@ export class Gate {
       }
     }
 
+    // Any other rejection is the model's word alone, and a wrong one would bury a real report in
+    // silence: a rejected ticket is never re-read and nobody is told. The model may propose it;
+    // a person confirms it.
+    if (status === "REJECTED" && rejectionKind !== "ANNOUNCEMENT") {
+      status = "NEEDS_HUMAN";
+      triageNote = `the model would dismiss this as ${rejectionKind ?? "OTHER"}: ${triageNote ?? "no reason given"}`;
+    }
+
     // Only questions about fields that are actually missing survive, in a bounded number.
     const questions = (output.questions ?? []).filter((q) => evaluation.missing.includes(q.field));
 
@@ -233,7 +241,9 @@ export class Gate {
       detail: [
         status === "REJECTED"
           ? `not a ticket: ${rejectionKind ?? "OTHER"}`
-          : evaluation.missing.length
+          : status === "NEEDS_HUMAN"
+            ? (triageNote ?? "held for a person")
+            : evaluation.missing.length
             ? `missing: ${evaluation.missing.join(", ")}`
             : output.kind,
         ...result.corrections.map((error) => `model output refused once: ${error}`),

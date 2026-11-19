@@ -6,6 +6,7 @@ export * from "./core/shape.js";
 export * from "./core/merge.js";
 export * from "./core/grounding.js";
 export * from "./core/evidence.js";
+export * from "./core/anchor.js";
 export * from "./core/announcement.js";
 export * from "./core/policy.js";
 export * from "./core/render.js";

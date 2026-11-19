@@ -194,6 +194,27 @@ describe("announcements", () => {
   });
 });
 
+describe("a rejection that is the model's word alone", () => {
+  const dismissal = (rejectionKind: string): Script => ({
+    match: "export button",
+    triage: [bugOutput({ status: "REJECTED", rejectionKind, triageNote: "same as an older ticket", kit: {} })],
+  });
+
+  it.each(["DUPLICATE", "OTHER"])("%s is held for a person instead of being buried", async (kind) => {
+    const { source, store, tracker, gate } = setup([dismissal(kind)]);
+    source.add({ author: "Dana", text: REPORT });
+
+    const report = await gate.runCycle();
+
+    const ticket = (await store.getTicket(1))!;
+    expect(ticket.status).toBe("NEEDS_HUMAN");
+    expect(ticket.triageNote).toContain(`dismiss this as ${kind}`);
+    expect(report.events.find((e) => e.step === "triage")).toMatchObject({ outcome: "NEEDS_HUMAN" });
+    expect(source.posted).toEqual([]);
+    expect(tracker.issues).toEqual([]);
+  });
+});
+
 describe("a model that never produces valid output", () => {
   it("is retried a bounded number of times, then handed to a person", async () => {
     const { source, store, gate, llm } = setup([{ match: "export button", triage: ["not json at all"] }], { maxTriageFailures: 2 });

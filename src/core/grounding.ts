@@ -52,3 +52,14 @@ export function isGrounded(value: string, thread: string): boolean {
   const found = tokens.filter((token) => haystack.includes(token)).length;
   return found / tokens.length >= MIN_GROUNDING_RATIO;
 }
+
+/**
+ * The same question for a NAME (a customer, an account). A short name such as "IBM" has no
+ * distinctive token, so it is also accepted when it appears in the thread as whole words.
+ */
+export function isNameGrounded(name: string, thread: string): boolean {
+  const needle = normaliseForGrounding(name);
+  if (needle.length === 0) return false;
+  if (` ${normaliseForGrounding(thread)} `.includes(` ${needle} `)) return true;
+  return isGrounded(name, thread);
+}

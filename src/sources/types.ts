@@ -8,7 +8,10 @@ export interface ChatMessage {
   author: string | null;
   /** Stable id of the author in the chat system, used to recognise the gate's own account. */
   authorId: string | null;
-  /** Plain text. Images are replaced by `ATTACHMENT_MARKER`. */
+  /**
+   * Plain text. Images are replaced by `ATTACHMENT_MARKER`, and an adapter must make sure the
+   * marker appears ONLY where an image was: the same characters typed by a person are rewritten.
+   */
   text: string;
   imageUrls: string[];
   createdAt: Date;

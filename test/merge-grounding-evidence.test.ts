@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { anchorKit } from "../src/core/anchor.js";
 import { attachmentEvidence, reconcileEvidence, threadHasAttachment } from "../src/core/evidence.js";
-import { distinctiveTokens, isGrounded } from "../src/core/grounding.js";
+import { distinctiveTokens, isGrounded, isNameGrounded } from "../src/core/grounding.js";
 import { ATTACHMENT_MARKER, FeatureKitSchema, InvestigationKitSchema, evaluateKit } from "../src/core/kits.js";
 import type { BugKit } from "../src/core/kits.js";
 import { mergeKit } from "../src/core/merge.js";
@@ -102,13 +103,83 @@ describe("evidence comes from the thread, not from the model", () => {
     expect(reconcileEvidence([{ kind: "screenshot", value: "unknown" }], "the chart is blank")).toEqual([]);
   });
 
-  it("keeps real evidence from the model as is", () => {
-    const real = [{ kind: "url" as const, value: "https://app.example.test/charts/7" }];
-    expect(reconcileEvidence(real, withImage)).toEqual(real);
+  it("does not keep the model's description of a screenshot nobody attached", () => {
+    const invented = [{ kind: "screenshot" as const, value: "screenshot of the blank chart" }];
+    expect(reconcileEvidence(invented, "the chart is blank")).toEqual([]);
+    expect(reconcileEvidence(invented, withImage)).toEqual([attachmentEvidence()]);
+  });
+
+  it("keeps a URL or a record id only when the reporter wrote it", () => {
+    const url = { kind: "url" as const, value: "https://app.example.test/charts/7" };
+    const id = { kind: "record_id" as const, value: "order #4821" };
+    const thread = "the chart at https://app.example.test/charts/7 is blank for order 4821";
+
+    expect(reconcileEvidence([url, id], thread)).toEqual([url, id]);
+    expect(reconcileEvidence([url, id], "the chart is blank")).toEqual([]);
+    expect(reconcileEvidence([{ ...url, value: "https://app.example.test/charts/8" }], thread)).toEqual([]);
+  });
+
+  it("keeps an error message that is quoted from the thread, even shortened", () => {
+    const thread = "it says: Export failed, upstream timeout while reading workspace 12";
+    expect(reconcileEvidence([{ kind: "error", value: "Export failed: upstream timeout" }], thread)).toHaveLength(1);
+    expect(reconcileEvidence([{ kind: "error", value: "NullPointerException in ReportWriter" }], thread)).toEqual([]);
+  });
+
+  it("puts the attachment next to what the reporter quoted", () => {
+    const url = { kind: "url" as const, value: "https://app.example.test/charts/7" };
+    expect(reconcileEvidence([url], `${withImage}
+https://app.example.test/charts/7`)).toEqual([attachmentEvidence(), url]);
   });
 
   it("detects the attachment marker", () => {
     expect(threadHasAttachment(withImage)).toBe(true);
     expect(threadHasAttachment("no image here")).toBe(false);
+  });
+});
+
+describe("anchorKit: what the model may not make up", () => {
+  const thread = "The export on the reports page is empty for Birchwood Clinic. It stopped showing after a reload.";
+
+  it("drops a customer name the reporter never wrote, which reopens the scope question", () => {
+    const kit = completeBugKit({ scope: { breadth: "one_customer", customerRef: "Northgate Dental" }, evidence: [] });
+    const anchored = anchorKit("BUG", kit, thread) as BugKit;
+    expect(anchored.scope).toEqual({ breadth: "one_customer" });
+    expect(evaluateKit("BUG", anchored).missing).toContain("scope");
+  });
+
+  it("keeps a customer name the reporter wrote", () => {
+    const kit = completeBugKit({ scope: { breadth: "one_customer", customerRef: "Birchwood Clinic" } });
+    expect((anchorKit("BUG", kit, thread) as BugKit).scope.customerRef).toBe("Birchwood Clinic");
+  });
+
+  it("accepts a reason for having no evidence only in the reporter's words", () => {
+    const real = completeBugKit({ evidence: [], noEvidenceReason: "it stopped showing after a reload" });
+    expect(evaluateKit("BUG", anchorKit("BUG", real, thread)).complete).toBe(true);
+
+    const invented = completeBugKit({ evidence: [], noEvidenceReason: "the customer deleted the screenshot" });
+    expect(evaluateKit("BUG", anchorKit("BUG", invented, thread)).missing).toEqual(["evidence"]);
+  });
+
+  it("drops an investigation target nobody named", () => {
+    const kit = InvestigationKitSchema.parse({
+      subject: "why the nightly imports failed",
+      target: { kind: "customer", ref: "Northgate Dental" },
+      period: "last week",
+      deliverable: "root_cause",
+    });
+    expect((anchorKit("INVESTIGATION", kit, thread) as { target: unknown }).target).toEqual({ kind: "customer" });
+  });
+
+  it("leaves kinds without evidence or names alone", () => {
+    const kit = FeatureKitSchema.parse({ problem: "we retype the list", desiredOutcome: "templates" });
+    expect(anchorKit("FEATURE", kit, thread)).toEqual(kit);
+  });
+});
+
+describe("isNameGrounded", () => {
+  it("accepts a short name written as whole words, which has no distinctive token", () => {
+    expect(isGrounded("ACE", "only ACE sees it")).toBe(false);
+    expect(isNameGrounded("ACE", "only ACE sees it")).toBe(true);
+    expect(isNameGrounded("ACE", "the interface is broken")).toBe(false);
   });
 });

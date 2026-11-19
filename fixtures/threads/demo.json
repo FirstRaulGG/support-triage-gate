@@ -86,8 +86,7 @@
               "expected": "milestones appear in the calendar within a minute",
               "actual": "nothing shows up and the page says 'Last sync: never'",
               "scope": "every workspace I checked",
-              "evidence": [],
-              "noEvidenceReason": "the page text was quoted directly in the report",
+              "evidence": [{ "kind": "error", "value": "Last sync: never" }],
               "frequency": "unknown"
             },
             "questions": []

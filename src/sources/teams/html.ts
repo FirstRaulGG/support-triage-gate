@@ -54,20 +54,28 @@ export function extractInlineImageUrls(html: string): string[] {
   return urls;
 }
 
+/** Stands in for an image while the text is cleaned. Cannot occur in the input: NULs are removed. */
+const IMAGE_SENTINEL = "\u0000img\u0000";
+
 /**
  * HTML -> text. Every image becomes `ATTACHMENT_MARKER`: that marker is how the rest of the system
- * knows, deterministically, that the reporter attached something. Mentions lose the tag and keep
- * the name.
+ * knows that the reporter attached something. Mentions lose the tag and keep the name.
+ *
+ * The marker must mean "an image was here" and nothing else, so the same characters TYPED by a
+ * person are rewritten before the real markers are placed.
  */
 export function stripTeamsHtml(html: string): string {
   const withoutTags = html
-    .replace(/<img\b[^>]*>/gi, `${ATTACHMENT_MARKER}\n`)
+    .replaceAll("\u0000", "")
+    .replace(/<img\b[^>]*>/gi, `${IMAGE_SENTINEL}\n`)
     .replace(/<\s*br\s*\/?\s*>/gi, "\n")
     .replace(/<\s*\/\s*(p|div|li|tr|h[1-6])\s*>/gi, "\n")
     .replace(/<\s*li[^>]*>/gi, "- ")
     .replace(/<[^>]*>/g, "");
 
   return decodeEntities(withoutTags)
+    .replaceAll(ATTACHMENT_MARKER, "(image attached)")
+    .replaceAll(IMAGE_SENTINEL, ATTACHMENT_MARKER)
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
